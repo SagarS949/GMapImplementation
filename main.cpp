@@ -1,112 +1,237 @@
 #include <bits/stdc++.h>
-#define INFINITE 9999
+
+#define V 11
 #define MAX 10
 #define MAXI 100
 
 using namespace std;
 
-struct adj_mat
+struct adj_mat                          //structure for input matrices
 {
   int adj[MAXI][MAXI];
   int traf[MAXI][MAXI];
 
 }a;
 
-void Dijkstra(int Graph[MAX][MAX], int n, int start, int dest);
-
-void Dijkstra(int Graph[MAX][MAX], int n, int start, int dest)
+struct name_dest                        //structure for place names
 {
-  int cost[MAX][MAX], distance[MAX], pred[MAX];
-  int visited[MAX], count, mindistance, nextnode, i, j;
+  char name[V][MAXI];
+}m;
 
-  // Creating cost matrix
-  for (i = 0; i < n; i++)
-    for (j = 0; j < n; j++)
-      if (Graph[i][j] == 0)
-        cost[i][j] = INFINITE;
-      else
-        cost[i][j] = Graph[i][j];
+int minDistance(int dist[], bool sptSet[])      //function to calculate min distance
+{
 
-  for (i = 0; i < n; i++) {
-    distance[i] = cost[start][i];
-    pred[i] = start;
-    visited[i] = 0;
-  }
+	// Initialize min value
+	int min = INT_MAX, min_index;
 
-  distance[start] = 0;
-  visited[start] = 1;
-  count = 1;
+	for (int v = 0; v < V; v++)
+		if (sptSet[v] == false && dist[v] <= min)
+			min = dist[v], min_index = v;
 
-  while (count < n - 1) {
-    mindistance = INFINITE;
-
-    for (i = 0; i < n; i++)
-      if (distance[i] < mindistance && !visited[i]) {
-        mindistance = distance[i];
-        nextnode = i;
-      }
-
-    visited[nextnode] = 1;
-    for (i = 0; i < n; i++)
-      if (!visited[i])
-        if (mindistance + cost[nextnode][i] < distance[i]) {
-          distance[i] = mindistance + cost[nextnode][i];
-          pred[i] = nextnode;
-        }
-    count++;
-  }
-
-  // Printing the distance
-  for (i = 0; i < n; i++)
-    if (i != start && i == dest) {
-      printf("\nDistance from source to %d: %d", i, distance[i]);
-    }
+	return min_index;
 }
-int main()
+
+int vis[V] = {0};
+int y = 1;
+
+void printPath(int parent[], int j, name_dest m)        //print shortest path
 {
-  int Graph[MAX][MAX], i, j, n, u, v;
-  n = 6;
+	// Base Case : If j is source
+	if (parent[j] == - 1)
+	{
+	    vis[0] = j;
+		return;
+	}
 
-  fstream fin;
+	printPath(parent, parent[j], m);
 
-  fin.open("adj.dat",ios::in);
+	cout<<"->"<<m.name[j];
+	vis[y] = j;
+	y++;
+}
 
-  if (!fin.is_open())
-    return -1;
-
-  for (i=0; i<6; i++)
-  {
-    for (j=0; j<6; j++)
+int dist_ret(int adj[MAXI][MAXI],int dest)          //returning total length of path
+{
+    int i,k=0;
+    int dist_tot = 0;
+    for(i=0;i<V;i++)
     {
-        fin.read((char*)&a,sizeof(a));
-    }
-  }
-
-  fin.close();
-
-  for (i=0; i<6; i++)
-  {
-    //cout<<"\n";
-    for (j=0; j<6; j++)
-    {
-        if(a.adj[i][j]!=0)
+        if(vis[k]!=dest-1)
         {
-            Graph[i][j] = a.adj[i][j]/(a.traf[i][j]);
-            //cout << Graph[i][j] << "\t";
+            dist_tot+=adj[vis[k]][vis[k+1]];
+            k++;
+        }
+    }
+    return dist_tot;
+}
+
+int dijkstra(int graph[V][V], int src, int dest, name_dest m)   //finding shortest path
+{
+
+	int dist[V],i;
+
+	bool sptSet[V];
+
+	int parent[V];
+
+	for (i = 0; i < V; i++)
+	{
+		parent[src] = -1;
+		dist[i] = INT_MAX;
+		sptSet[i] = false;
+	}
+
+	dist[src] = 0;
+
+	for (int count = 0; count < V - 1; count++)
+	{
+
+		int u = minDistance(dist, sptSet);
+
+		sptSet[u] = true;
+
+		for (int v = 0; v < V; v++)
+
+			if (!sptSet[v] && graph[u][v] && dist[u] + graph[u][v] < dist[v])
+			{
+				parent[v] = u;
+				dist[v] = dist[u] + graph[u][v];
+			}
+	}
+
+	printPath(parent, dest, m);
+	int speed;
+	for (i = 0; i < V; i++)
+    {
+        if (i != src && i == dest)
+        {
+            speed = dist[i];
+        }
+    }
+    return speed;
+}
+
+void display_head()         //display main heading
+{
+    cout <<"\t\t\t\t   #############################################\n";
+    cout <<"\t\t\t\t   ---------------------------------------------\n";
+    cout <<"\t\t\t\t   *********************************************\n";
+    cout << "\n\t\t\t\t\t\t     ROUTER MAPS"<<endl<<endl;
+    cout <<"\t\t\t\t   *********************************************\n";
+    cout <<"\t\t\t\t   ---------------------------------------------\n";
+    cout <<"\t\t\t\t   #############################################\n";
+
+}
+
+int main()                          //driver code
+{
+    int graph[V][V], i, j;
+
+	fstream fin;
+
+    fin.open("adj.dat",ios::in);        //open file with matrix in read mode
+
+    if (!fin.is_open())
+    {
+        return -1;
+    }
+
+    for (i=0; i<V; i++)
+    {
+        for (j=0; j<V; j++)
+        {
+            fin.read((char*)&a,sizeof(a));      //reading contents from file
+        }
+    }
+
+    fin.close();
+
+    fin.open("Name.dat",ios::in);           //open file with location names in read mode
+    fin.read((char*)&m,sizeof(m));          //reading contents of file
+
+    for (i=0; i<V; i++)
+    {
+        for (j=0; j<V; j++)
+        {
+            if(a.adj[i][j]!=0)
+            {
+                graph[i][j] = a.adj[i][j]/(a.traf[i][j]);
+            }
+            else
+            {
+                graph[i][j] = 0;
+            }
+
+        }
+    }
+
+    int ch1;
+    char ch2;
+    int source,destination;
+    int speed,dist_tot;
+    while(1)
+    {
+        system("cls");
+        display_head();
+        cout<<"\n\nWelcome "<<endl;
+        cout<<"\n\n1. Enter source and destination"<<endl;
+        cout<<"2. Exit"<<endl;
+        cout<<"\nEnter choice: ";
+        cin>>ch1;
+        if(ch1==1)
+        {
+            system("cls");
+            display_head();
+            for(i = 0; i < V; i++)
+            {
+              cout << i+1 <<". " << m.name[i] << "\n";
+            }
+            while(1)
+            {
+                cout<<"\n\nEnter source: ";
+                cin>>source;
+                cout<<"Enter destination: ";
+                cin>>destination;
+                if(source == destination)
+                {
+                    cout<<"Source and Destination are same!!!"<<endl;
+                    cout<<"Please choose different Destination!!!"<<endl;
+                }
+                else if(source>11 || destination>11)
+                {
+                    cout<<"Please enter valid choice!!!"<<endl;
+                }
+                else
+                {
+                    break;
+                }
+            }
+            cout<<"\n\nPath to be taken: "<<m.name[source-1];
+            speed = dijkstra(graph, source-1, destination-1, m);
+            dist_tot = dist_ret(a.adj,destination);
+            cout<<"\nDistance: "<<(float)dist_tot/1000<<" km/"<<dist_tot<<" m";
+            cout<<"\nTime: "<<dist_tot/speed<<" minutes"<<endl;
+
+        }
+        else if(ch1==2)
+        {
+            break;
         }
         else
         {
-            Graph[i][j] = 0;
+            cout<<"Enter valid input!!!!"<<endl;
         }
-
+        cout<<"\n\nDo you want to continue(y/n)??\n";
+        cin>>ch2;
+        if(ch2=='n' || ch2=='N')
+        {
+            break;
+        }
+        for(i=0;i<V;i++)
+        {
+            vis[i] = 0;
+        }
+        y=1;
     }
-  }
-
-  //cout << "\n";
-
-  u = 2;
-  v = 4;
-  Dijkstra(Graph, n, u, v);
-
-  return 0;
+	return 0;
 }
